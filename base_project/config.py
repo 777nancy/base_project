@@ -1,6 +1,6 @@
 import os
-from dotenv import load_dotenv
 
+from dotenv import load_dotenv
 
 ###########################################################################
 # プロジェクト名
@@ -13,11 +13,14 @@ PROJECT_NAME = 'base_project'
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
 CONFIG_ROOT_PATH = os.path.join(PROJECT_ROOT, 'config')
 LIB_ROOT_PATH = os.path.join(PROJECT_ROOT, 'lib')
+TEMPLATES_ROOT_PATH = os.path.join(PROJECT_ROOT, 'templates')
 
 ###########################################################################
 # 環境設定ファイルの読み込み
 # .envファイルは下記以降の設定が反映
 ###########################################################################
+
+# ${PROJECT_NAME}_ENVIRONMENTの設定
 env_file_name = f'{os.getenv(f"{PROJECT_NAME.upper()}_ENVIRONMENT", "test")}.env'
 env_file_path = os.path.join(CONFIG_ROOT_PATH, env_file_name)
 load_dotenv(env_file_path)

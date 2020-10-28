@@ -1,18 +1,42 @@
-import traceback
-
 import slackweb
+
 from base_project import config
+from base_project.utils import template_file_reader
 
 
 class SlackNotificator(object):
+    """
+    プロジェクト内のSlackの通知を管理するクラス
+    """
 
-    def __init__(self):
+    def __init__(self, username):
+        """コンストラクタ
+
+        Args:
+            username: ユーザ名
+        """
+
+        self._username = username
         self._slack = slackweb.Slack(url=config.SLACK_WEBHOOK_URL)
 
-    def notify(self, username, text):
-        self._slack.notify(username=username, text=text)
+        self._template_file_reader = template_file_reader.TemplateFileReader(config.TEMPLATES_ROOT_PATH)
 
-    def notify_exception(self, username, exception):
-        text = 'エラーが発生しました\n'
-        trace_back = ''.join(traceback.TracebackException.from_exception(exception).format())
-        self._slack.notify(username=username, text=text+trace_back)
+    def notify(self, text):
+        """Slackへ通知する
+
+        Args:
+            text: 通知テキスト
+
+        """
+        self._slack.notify(username=self._username, text=text)
+
+    def notify_by_file(self, file_path, params=None):
+        """ファイルからテンプレートを読み込んでSlackへ通知する
+
+        Args:
+            file_path: ファイルパス
+            params: コンテキスト
+
+        """
+        text = self._template_file_reader.read(file_path, params)
+        self._slack.notify(username=self._username, text=text)

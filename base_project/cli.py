@@ -8,6 +8,9 @@ from base_project.utils import time_util
 
 
 class CLI(object):
+    """
+    本プロジェクのエントリポイント
+    """
 
     def __init__(self):
         # コマンドライン引数の取得
@@ -51,7 +54,7 @@ class CLI(object):
             logger.info('end main_process')
         except Exception as e:
             logger.exception(e)
-            processor.do_in_exception(e)
+            processor.do_after_exception(e)
             raise
 
 

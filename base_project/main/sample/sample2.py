@@ -9,8 +9,5 @@ class Sample(base.BasicLogic):
         super().__init__()
         print('no arguments')
 
-    def main_process(self, *args, **kwargs):
+    def run(self, *args, **kwargs):
         print('main process')
-
-    def post_process(self, *args, **kwargs):
-        print('post process')

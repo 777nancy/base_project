@@ -13,7 +13,7 @@ class TemplateFileReader(object):
             content = fin.read()
 
         if context:
-            template = string.Template(context)
+            template = string.Template(content)
             content = template.safe_substitute(context)
 
         return content

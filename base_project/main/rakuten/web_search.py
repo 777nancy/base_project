@@ -1,13 +1,18 @@
 import contextlib
+import logging
 import os
 import time
 
 import chromedriver_binary
 import mimesis
-from base_project import config, slack
-from base_project.main.base import base
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+
+from base_project import config, slack
+from base_project.main.base import base
+from base_project.utils import time_util, util
+
+logger = logging.getLogger(__name__)
 
 LOGIN_URL = 'https://grp03.id.rakuten.co.jp/rms/nid/login?service_id=r12&return_url=login?tool_id=1&tp=&id='
 WEB_SEARCH_URL = 'https://websearch.rakuten.co.jp'
@@ -18,11 +23,13 @@ class WebSearch(base.BasicLogic):
     def __init__(self):
         super().__init__()
 
-        self.slack_notificator = slack.SlackNotificator()
+        self._slack_notificator = slack.SlackNotificator(__name__)
+        self._start_time = None
 
     def run(self):
-        text = mimesis.Text()
-        word_list = [text.word() for _ in range(30)]
+
+        self._start_time = time_util.get_timestamp()
+
         options = Options()
 
         add_on_path = os.path.join(config.LIB_ROOT_PATH, 'extension_4_655_0_0.crx')
@@ -33,6 +40,7 @@ class WebSearch(base.BasicLogic):
             stack.callback(driver.quit)
             driver.get(LOGIN_URL)
 
+            logger.info('ログイン開始')
             user_id_element = driver.find_element_by_xpath('//*[@id="loginInner_u"]')
             user_id_element.send_keys(config.RAKUTEN_USER)
             time.sleep(3)
@@ -44,17 +52,38 @@ class WebSearch(base.BasicLogic):
             time.sleep(3)
             if 'login' in driver.current_url:
                 raise ValueError('user id or password is incorrect')
+            logger.info('ログイン完了')
 
-            for search_word in word_list:
+            text = mimesis.Text()
+            logger.info('検索開始')
+            for i in range(30):
                 driver.get(WEB_SEARCH_URL)
                 search_window = driver.find_element_by_xpath('//*[@id="search-input"]')
+                search_word = text.word()
+                logger.info('検索ワード: {}'.format(search_word))
                 search_window.send_keys(search_word)
                 time.sleep(3)
                 search_submit = driver.find_element_by_xpath('//*[@id="search-submit"]')
                 search_submit.click()
                 time.sleep(3)
+            logger.info('検索完了')
 
-        self.slack_notificator.notify('web_search', '処理が正常終了しました')
+        # slackへ通知
+        end_time = time_util.get_timestamp()
+        context = {
+            'start_time': self._start_time,
+            'end_time': end_time
+        }
 
-    def do_in_exception(self, exception):
-        self.slack_notificator.notify_exception(__name__, exception)
+        self._slack_notificator.notify_by_file(os.path.join('slack', 'rakuten', 'success.txt'), context)
+
+    def do_after_exception(self, exception):
+
+        # slackへエラー通知
+        end_time = time_util.get_timestamp()
+        context = {
+            'start_time': self._start_time,
+            'end_time': end_time,
+            'traceback': util.exception2str(exception)
+        }
+        self._slack_notificator.notify_by_file(os.path.join('slack', 'rakuten', 'error.txt'), context)

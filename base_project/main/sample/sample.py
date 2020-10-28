@@ -9,11 +9,8 @@ class Sample(base.BasicLogic):
         super().__init__()
         print(carrier, service_type, status, version)
 
-    def main_process(self, *args, **kwargs):
+    def run(self, *args, **kwargs):
         print('main process')
-
-    def post_process(self, *args, **kwargs):
-        print('post process')
 
     @staticmethod
     def cli(sys_argv):
