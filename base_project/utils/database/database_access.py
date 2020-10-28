@@ -145,7 +145,7 @@ class DatabaseAccess(metaclass=ABCMeta):
         self._connection_pool.close_all_connections()
 
 
-class PostgreSQLDatabaseAccess(DatabaseAccess):
+class PostgreSQLAccess(DatabaseAccess):
     """
     PostgreSQLのアクセスを行うクラス
     """
