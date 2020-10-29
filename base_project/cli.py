@@ -15,7 +15,7 @@ class CLI(object):
     def __init__(self):
         # コマンドライン引数の取得
         parser = argparse.ArgumentParser(description='cli runner',
-                                         usage='cli <module_path> <class_name> [<args>]')
+                                         usage='cli.py <module_path> <class_name> [<args>]')
 
         parser.add_argument('module_path', help='module path')
         parser.add_argument('class_name', help='class name')

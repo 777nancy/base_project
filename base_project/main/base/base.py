@@ -5,11 +5,12 @@ class BasicLogic(metaclass=ABCMeta):
     """
     本プロジェクトの基底ロジック
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, **kwargs):
         """コンストラクタ
 
         Args:
-            cliで設定した名前てコマンドライン引数が引数として渡される
+            **kwargs: cliで設定した名前でコマンドライン引数がコンストラクタの引数として渡される。
+            コマンドライン引数が設定されていない場合は引数はない。
         """
         pass
 
