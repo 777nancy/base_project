@@ -10,10 +10,10 @@ PROJECT_NAME = 'base_project'
 ###########################################################################
 # プロジェクトに関するディレクトリのパス
 ###########################################################################
-PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
-CONFIG_ROOT_PATH = os.path.join(PROJECT_ROOT, 'config')
-LIB_ROOT_PATH = os.path.join(PROJECT_ROOT, 'lib')
-TEMPLATES_ROOT_PATH = os.path.join(PROJECT_ROOT, 'templates')
+PROJECT_ROOT_PATH = os.path.dirname(os.path.dirname(__file__))
+CONFIG_ROOT_PATH = os.path.join(PROJECT_ROOT_PATH, 'config')
+LIB_ROOT_PATH = os.path.join(PROJECT_ROOT_PATH, 'lib')
+TEMPLATES_ROOT_PATH = os.path.join(PROJECT_ROOT_PATH, 'templates')
 
 ###########################################################################
 # 環境設定ファイルの読み込み

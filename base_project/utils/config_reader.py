@@ -28,7 +28,7 @@ class JsonConfigReader(ConfigReader):
             config_path: コンフィグファイルのパス
         """
         with open(config_path, mode='r') as fin:
-            self.config = json.load(fin)
+            self._config = json.load(fin)
 
     def get_property(self, *args):
         """引数から値を取得する
@@ -39,15 +39,16 @@ class JsonConfigReader(ConfigReader):
         Returns:
             キーから取得される値
         """
-        if self.config is list:
+        if type(self._config) is list:
             return None
 
-        json_property = self.config
+        json_property = self._config
         for arg in args:
-            sub_json_property = json_property.get(arg)
 
-            if sub_json_property is None:
-                raise KeyError('{} is not found'.format(arg))
+            if json_property is None or type(json_property) is not dict:
+                return None
+
+            sub_json_property = json_property.get(arg)
 
             json_property = sub_json_property
 
@@ -59,4 +60,4 @@ class JsonConfigReader(ConfigReader):
         Returns:
             辞書
         """
-        return self.config
+        return self._config
