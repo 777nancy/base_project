@@ -1,6 +1,8 @@
 from abc import ABCMeta, abstractmethod
 
+import sqlalchemy
 from psycopg2 import pool
+from sqlalchemy import pool
 
 
 class DatabaseConnectionPool(metaclass=ABCMeta):
@@ -57,3 +59,22 @@ class PostgreSQLConnectionPool(DatabaseConnectionPool):
         """コネクションプールのコネクションをすべてクローズする
         """
         self._connection_pool.closeall()
+
+
+class SqlAlchemyConnectionPool(DatabaseConnectionPool):
+    """
+    sqlalchemyを利用したコネクションプール管理クラス
+    """
+
+    def __init__(self, url, max_overflow, pool_size):
+        self._engine = sqlalchemy.create_engine(url, pool_size=int(pool_size), max_overflow=int(max_overflow),
+                                                poolclass=pool.QueuePool)
+
+    def get_connection(self):
+        return self._engine.raw_connection()
+
+    def return_connection(self, connection):
+        connection.close()
+
+    def close_all_connections(self):
+        self._engine.dispose()

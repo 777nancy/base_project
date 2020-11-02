@@ -77,28 +77,22 @@ class Config(object):
         # データベースの設定
         ###########################################################################
 
-        template_db_url = '{rdbms}://{user}:{password}@{host}:{port}/{dbname}'
+        template_db_url = '{rdbms}+pymysql://{user}:{password}@{host}:{port}/{dbname}'
+        
+        self.SAMPLE_DB_URL = template_db_url.format(
+            rdbms='mysql',
+            user=os.getenv('SAMPLE_DB_USER'),
+            password=os.getenv('SAMPLE_DB_PASSWORD'),
+            host=os.getenv('SAMPLE_DB_HOST'),
+            port=os.getenv('SAMPLE_DB_PORT'),
+            dbname=os.getenv('SAMPLE_DB_DBNAME')
+        )
 
         self._SAMPLE_DB = {
-            'rdbms': 'PostgreSQL',
-            'host': os.getenv('SAMPLE_DB_HOST'),
-            'port': os.getenv('SAMPLE_DB_PORT'),
-            'user': os.getenv('SAMPLE_DB_USER'),
-            'password': os.getenv('SAMPLE_DB_PASSWORD'),
-            'dbname': os.getenv('SAMPLE_DB_DBNAME'),
-            'minconn': os.getenv('SAMPLE_DB_MINCONN', 1),
-            'maxconn': os.getenv('SAMPLE_DB_MAXCONN', 1),
-        }
-
-        self._MARKET_DB = {
-            'rdbms': 'PostgreSQL',
-            'host': os.getenv('MARKET_DB_HOST'),
-            'port': os.getenv('MARKET_DB_PORT'),
-            'user': os.getenv('MARKET_DB_USER'),
-            'password': os.getenv('MARKET_DB_PASSWORD'),
-            'dbname': os.getenv('MARKET_DB_DBNAME'),
-            'minconn': os.getenv('MARKET_DB_MINCONN', 1),
-            'maxconn': os.getenv('MARKET_DB_MAXCONN', 1),
+            'rdbms': 'MySQL',
+            'url': self.SAMPLE_DB_URL,
+            'pool_size': os.getenv('SAMPLE_DB_MINCONN'),
+            'max_overflow': os.getenv('SAMPLE_DB_MAXCONN'),
         }
 
         self.MARKET_DB_URL = template_db_url.format(
@@ -109,6 +103,13 @@ class Config(object):
             port=os.getenv('MARKET_DB_PORT'),
             dbname=os.getenv('MARKET_DB_DBNAME')
         )
+
+        self._MARKET_DB = {
+            'rdbms': 'PostgreSQL',
+            'url': self.MARKET_DB_URL,
+            'max_overflow': os.getenv('MARKET_DB_MAXCONN'),
+            'pool_size': os.getenv('MARKET_DB_MINCONN'),
+        }
 
         ###########################################################################
         # メールの設定

@@ -14,6 +14,15 @@ services:
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
+  mysql:
+    image: mysql
+    ports:
+      - "13306:3306"
+    volumes:
+      - ./docker/mysql:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      MYSQL_ROOT_PASSWORD: root
   pgadmin4:
     image: dpage/pgadmin4
     container_name: pgadmin4
@@ -26,3 +35,10 @@ services:
       PGADMIN_DEFAULT_PASSWORD: root
     depends_on:
       - postgres
+  phpmyadmin:
+    image: phpmyadmin
+    container_name: phpmyadmin
+    environment:
+      - PMA_ARBITRARY=1
+    ports:
+      - 8080:80

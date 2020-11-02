@@ -1,7 +1,7 @@
 import argparse
 import contextlib
-import os
 import logging
+import os
 
 from base_project import slack
 from base_project.main.base import base

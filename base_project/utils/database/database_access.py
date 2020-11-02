@@ -12,8 +12,17 @@ class DatabaseAccess(metaclass=ABCMeta):
     """
     データベースアクセスの行う基底のクラス
     """
-    _connection_pool = None
-    _dict_cursor = False
+
+    def __init__(self, url, max_overflow: int, pool_size: int, dict_cursor=False):
+        """コンストラクタ
+
+        Args:
+            url: データベース接続URL
+            max_overflow: 追加接続可能なコネクション数
+            pool_size: プールに保持するコネクション数
+        """
+        self._connection_pool = connection_pool.SqlAlchemyConnectionPool(url, max_overflow, pool_size)
+        self._dict_cursor = dict_cursor
 
     @staticmethod
     def read_query_from_file(file_path: str, encoding: str = None) -> str:
@@ -31,13 +40,9 @@ class DatabaseAccess(metaclass=ABCMeta):
         return query
 
     @staticmethod
+    @abstractmethod
     def _execute(cur, query, params=None, raw_params=None):
-        if raw_params:
-            query = query.format(**raw_params)
-
-        cur.execute(query, params)
-        logger.info('SQL: {}'.format(cur.query.decode()))
-        return cur
+        pass
 
     def execute(self, query: str, params: Union[dict, list, tuple] = None, raw_params: dict = None):
         """クエリを実行する
@@ -194,7 +199,6 @@ class DatabaseAccess(metaclass=ABCMeta):
 
     @abstractmethod
     def drop_table(self, table_name):
-
         raise NotImplementedError
 
     @abstractmethod
@@ -213,16 +217,15 @@ class PostgreSQLAccess(DatabaseAccess):
     PostgreSQLのアクセスを行うクラス
     """
 
-    def __init__(self, minconn: int, maxconn: int, dict_cursor=False, **kwargs: dict):
-        """コンストラクタ
+    @staticmethod
+    def _execute(cur, query, params=None, raw_params=None):
+        pass
+        if raw_params:
+            query = query.format(**raw_params)
 
-        Args:
-            minconn: 最小コネクション数
-            maxconn: 最大コネクション数
-            **kwargs: データベース情報の辞書
-        """
-        self._connection_pool = connection_pool.PostgreSQLConnectionPool(minconn, maxconn, **kwargs)
-        self._dict_cursor = dict_cursor
+        cur.execute(query, params)
+        logger.info('SQL: {}'.format(cur.query.decode()))
+        return cur
 
     def drop_table(self, table_names):
 
@@ -243,6 +246,36 @@ class PostgreSQLAccess(DatabaseAccess):
             return False
 
 
+class MySQLAccess(DatabaseAccess):
+
+    @staticmethod
+    def _execute(cur, query, params=None, raw_params=None):
+        pass
+        if raw_params:
+            query = query.format(**raw_params)
+
+        cur.execute(query, params)
+        logger.info('SQL: {}'.format(cur._executed))
+        return cur
+
+    def drop_table(self, table_names):
+
+        if type(table_names) is str:
+            table_names = [table_names]
+
+        for table_name in table_names:
+            self.execute('DROP TABLE IF EXISTS {table_name}', raw_params={'table_name': table_name})
+
+    def table_exists(self, table_name):
+        row = self.select_one('SELECT TABLE_NAME FROM information_schema.tables WHERE table_name= %(table_name)s',
+                              params={'table_name': table_name})
+
+        if row:
+            return True
+        else:
+            return False
+
+
 class DatabaseAccessFactory(object):
 
     @classmethod
@@ -251,6 +284,8 @@ class DatabaseAccessFactory(object):
         kwargs.pop('rdbms')
         if rdbms == 'postgresql':
             return PostgreSQLAccess(**kwargs)
+        elif rdbms == 'mysql':
+            return MySQLAccess(**kwargs)
         elif rdbms is None:
             raise KeyError('rdbms is not set')
         else:
