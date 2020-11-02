@@ -247,3 +247,5 @@ pip-selfcheck.json
 config/*.env
 config/*.json
 log/*.log
+
+docker
