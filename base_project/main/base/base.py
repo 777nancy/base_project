@@ -38,3 +38,4 @@ class BasicLogic(metaclass=ABCMeta):
 
         """
         pass
+

@@ -17,9 +17,10 @@ class SlackNotificator(object):
         """
 
         self._username = username
-        self._slack = slackweb.Slack(url=config.SLACK_WEBHOOK_URL)
+        self._config = config.Config.get_instance()
+        self._slack = slackweb.Slack(url=self._config.SLACK_WEBHOOK_URL)
 
-        self._template_file_reader = template_file_reader.TemplateFileReader(config.TEMPLATES_ROOT_PATH)
+        self._template_file_reader = template_file_reader.TemplateFileReader(self._config.TEMPLATES_ROOT_PATH)
 
     def notify(self, text):
         """Slackへ通知する
@@ -30,7 +31,7 @@ class SlackNotificator(object):
         """
         self._slack.notify(username=self._username, text=text)
 
-    def notify_by_file(self, file_path, params=None):
+    def notify_from_file(self, file_path, params=None):
         """ファイルからテンプレートを読み込んでSlackへ通知する
 
         Args:

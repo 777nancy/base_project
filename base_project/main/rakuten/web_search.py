@@ -24,15 +24,16 @@ class WebSearch(base.BasicLogic):
         super().__init__()
 
         self._slack_notificator = slack.SlackNotificator(__name__)
+        self._config = config.Config.get_instance()
         self._start_time = None
 
     def run(self):
 
-        self._start_time = time_util.get_timestamp()
+        self._start_time = time_util.get_timestamp_now()
 
         options = Options()
 
-        add_on_path = os.path.join(config.LIB_ROOT_PATH, 'extension_4_655_0_0.crx')
+        add_on_path = os.path.join(self._config.LIB_ROOT_PATH, 'extension_4_655_0_0.crx')
         options.add_extension(add_on_path)
         driver = webdriver.Chrome(options=options)
 
@@ -42,10 +43,10 @@ class WebSearch(base.BasicLogic):
 
             logger.info('ログイン開始')
             user_id_element = driver.find_element_by_xpath('//*[@id="loginInner_u"]')
-            user_id_element.send_keys(config.RAKUTEN_USER)
+            user_id_element.send_keys(self._config.RAKUTEN_CONFIG.get('user'))
             time.sleep(3)
             password_element = driver.find_element_by_xpath('//*[@id="loginInner_p"]')
-            password_element.send_keys(config.RAKUTEN_PASSWORD)
+            password_element.send_keys(self._config.RAKUTEN_CONFIG.get('password'))
             time.sleep(3)
             login_submit = driver.find_element_by_xpath('//*[@id="loginInner"]/p[1]/input')
             login_submit.click()
@@ -56,7 +57,7 @@ class WebSearch(base.BasicLogic):
 
             text = mimesis.Text()
             logger.info('検索開始')
-            for i in range(30):
+            for i in range(35):
                 driver.get(WEB_SEARCH_URL)
                 search_window = driver.find_element_by_xpath('//*[@id="search-input"]')
                 search_word = text.word()
@@ -69,21 +70,21 @@ class WebSearch(base.BasicLogic):
             logger.info('検索完了')
 
         # slackへ通知
-        end_time = time_util.get_timestamp()
+        end_time = time_util.get_timestamp_now()
         context = {
             'start_time': self._start_time,
             'end_time': end_time
         }
 
-        self._slack_notificator.notify_by_file(os.path.join('slack', 'rakuten', 'success.txt'), context)
+        self._slack_notificator.notify_from_file(os.path.join('slack', 'rakuten', 'success.txt'), context)
 
     def do_after_exception(self, exception):
 
         # slackへエラー通知
-        end_time = time_util.get_timestamp()
+        end_time = time_util.get_timestamp_now()
         context = {
             'start_time': self._start_time,
             'end_time': end_time,
             'traceback': util.exception2str(exception)
         }
-        self._slack_notificator.notify_by_file(os.path.join('slack', 'rakuten', 'error.txt'), context)
+        self._slack_notificator.notify_from_file(os.path.join('slack', 'utils', 'error.txt'), context)

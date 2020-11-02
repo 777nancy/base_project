@@ -1,0 +1,6 @@
+処理が正常終了しました。
+
+ticker symbol: ${ticker_symbol}
+
+開始時間: $start_time
+終了時間: $end_time

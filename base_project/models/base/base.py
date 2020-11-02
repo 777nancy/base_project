@@ -1,43 +1,28 @@
-# Standard Library
-import logging
-from abc import ABCMeta, abstractmethod
+import os
+from abc import ABCMeta
 from typing import Union
 
-from base_project.utils.database import connection_pool, cursor
+from base_project import config
+from base_project.utils.database import database_access
 
-logger = logging.getLogger(__name__)
+SQl_ROOT_PATH = config.Config.get_instance().SQL_ROOT_PATH
 
 
-class DatabaseAccess(metaclass=ABCMeta):
-    """
-    データベースアクセスの行う基底のクラス
-    """
-    _connection_pool = None
-    _dict_cursor = False
+def join_sql_file_path(*sql_file_dirs):
+    def _join_sql_file_path(function):
+        def __join_sql_file_path(self, file_path, *args, **kwargs):
+            abs_sql_file_path = os.path.join(*sql_file_dirs, file_path)
+            return function(self, abs_sql_file_path, *args, **kwargs)
 
-    @staticmethod
-    def read_query_from_file(file_path: str, encoding: str = None) -> str:
-        """ファイルからクエリを読み込む
+        return __join_sql_file_path
 
-        Args:
-            file_path: ファイルパス
-            encoding: エンコーディング
+    return _join_sql_file_path
 
-        Returns:
-            ファイルのクエリ文字列
-        """
-        with open(file_path, mode='r', encoding=encoding) as fin:
-            query = fin.read()
-        return query
 
-    @staticmethod
-    def _execute(cur, query, params=None, raw_params=None):
-        if raw_params:
-            query = query.format(**raw_params)
+class ModelForDatabase(metaclass=ABCMeta):
 
-        cur.execute(query, params)
-        logger.info('SQL: {}'.format(cur.query.decode()))
-        return cur
+    def __init__(self, **kwargs):
+        self._db = database_access.DatabaseAccessFactory.create(**kwargs)
 
     def execute(self, query: str, params: Union[dict, list, tuple] = None, raw_params: dict = None):
         """クエリを実行する
@@ -46,11 +31,11 @@ class DatabaseAccess(metaclass=ABCMeta):
             query: クエリ
             params: クエリパラメタ
             raw_params: formatで設定するパラメタ
-            
-        """
-        with cursor.CursorFromConnectionFromPool(self._connection_pool, self._dict_cursor) as cur:
-            self._execute(cur, query, params, raw_params)
 
+        """
+        self._db.execute(query, params, raw_params)
+
+    @join_sql_file_path(SQl_ROOT_PATH)
     def execute_from_file(self, file_path: str, params: Union[dict, list, tuple] = None, raw_params: dict = None,
                           encoding: str = None):
         """ファイルからクエリを読み込み、executeを実行する
@@ -60,10 +45,9 @@ class DatabaseAccess(metaclass=ABCMeta):
             params: クエリパラメタ
             raw_params: formatで設定するパラメタ
             encoding: エンコーディング
-            
+
         """
-        query = self.read_query_from_file(file_path, encoding)
-        self.execute(query, params, raw_params)
+        self._db.execute_from_file(file_path, params, raw_params, encoding)
 
     def executemany(self, query: str, params: Union[list, tuple] = None, raw_params: dict = None):
         """タプル、リストからデータのINSERTを行う
@@ -74,13 +58,10 @@ class DatabaseAccess(metaclass=ABCMeta):
             raw_params: formatで設定するパラメタ
 
         """
-        with cursor.CursorFromConnectionFromPool(self._connection_pool, self._dict_cursor) as cur:
-            if raw_params:
-                query = query.format(**raw_params)
 
-            cur.executemany(query, params)
-            logger.info('SQL: {}'.format(cur.query.decode()))
+        self._db.execute_from_file(query, params, raw_params)
 
+    @join_sql_file_path(SQl_ROOT_PATH)
     def executemany_from_file(self, file_path: str, params: Union[dict, list, tuple] = None, raw_params: dict = None,
                               encoding: str = None):
         """ファイルからクエリを読み込み、executemanyを実行する
@@ -92,8 +73,8 @@ class DatabaseAccess(metaclass=ABCMeta):
             encoding: エンコーディング
 
         """
-        query = self.read_query_from_file(file_path, encoding)
-        self.executemany(query, params, raw_params)
+
+        self._db.execute_from_file(file_path, params, raw_params, encoding)
 
     def select_all(self, query: str, params: Union[dict, list, tuple] = None, raw_params: dict = None) -> tuple:
         """SELECT文を実行し、結果をすべて取得する
@@ -106,10 +87,9 @@ class DatabaseAccess(metaclass=ABCMeta):
         Returns:
             クエリの実行結果
         """
-        with cursor.CursorFromConnectionFromPool(self._connection_pool, self._dict_cursor) as cur:
-            self._execute(cur, query, params, raw_params)
-            return cur.fetchall()
+        return self._db.select_all_from_file(query, params, raw_params)
 
+    @join_sql_file_path(SQl_ROOT_PATH)
     def select_all_from_file(self, file_path: str, params: Union[dict, list, tuple] = None, raw_params: dict = None,
                              encoding: str = None) -> tuple:
         """ファイルからクエリを読み込み、select_allを実行する
@@ -123,8 +103,7 @@ class DatabaseAccess(metaclass=ABCMeta):
         Returns:
             クエリの実行結果
         """
-        query = self.read_query_from_file(file_path, encoding)
-        return self.select_all(query, params, raw_params)
+        return self._db.select_all_from_file(file_path, params, raw_params, encoding)
 
     def select_many(self, query: str, fetch_size: int, params: Union[dict, list, tuple] = None,
                     raw_params: dict = None) -> tuple:
@@ -139,10 +118,9 @@ class DatabaseAccess(metaclass=ABCMeta):
         Returns:
             クエリの実行結果
         """
-        with cursor.CursorFromConnectionFromPool(self._connection_pool, self._dict_cursor) as cur:
-            self._execute(cur, query, params, raw_params)
-            return cur.fetchmany(fetch_size)
+        return self._db.select_many(query, fetch_size, params, raw_params)
 
+    @join_sql_file_path(SQl_ROOT_PATH)
     def select_many_from_file(self, file_path: str, fetch_size: int, params: Union[dict, list, tuple] = None,
                               raw_params: dict = None,
                               encoding: str = None) -> tuple:
@@ -158,8 +136,7 @@ class DatabaseAccess(metaclass=ABCMeta):
         Returns:
             クエリの実行結果
         """
-        query = self.read_query_from_file(file_path, encoding)
-        return self.select_many(query, fetch_size, params, raw_params)
+        return self._db.select_many_from_file(file_path, fetch_size, params, raw_params, encoding)
 
     def select_one(self, query: str, params: Union[dict, list, tuple] = None, raw_params: dict = None) -> tuple:
         """SELECT文を実行し、結果の先頭を取得する
@@ -172,10 +149,9 @@ class DatabaseAccess(metaclass=ABCMeta):
         Returns:
             クエリの実行結果
         """
-        with cursor.CursorFromConnectionFromPool(self._connection_pool, self._dict_cursor) as cur:
-            self._execute(cur, query, params, raw_params)
-            return cur.fetchone()
+        return self._db.select_one(query, params, raw_params)
 
+    @join_sql_file_path(SQl_ROOT_PATH)
     def select_one_from_file(self, file_path: str, params: Union[dict, list, tuple] = None, raw_params: dict = None,
                              encoding: str = None) -> tuple:
         """ファイルからクエリを読み込み、select_oneを実行する
@@ -189,69 +165,16 @@ class DatabaseAccess(metaclass=ABCMeta):
         Returns:
             クエリの実行結果
         """
-        query = self.read_query_from_file(file_path, encoding)
-        return self.select_one(query, params, raw_params)
+        return self._db.select_one_from_file(file_path, params, raw_params, encoding)
 
-    @abstractmethod
     def drop_table(self, table_name):
+        self._db.drop_table(table_name)
 
-        raise NotImplementedError
-
-    @abstractmethod
     def table_exists(self, table_name):
-        raise NotImplementedError
+        return self._db.table_exists(table_name)
 
     def close(self):
-        """コネクションをクロースする
+        """コネクションをクローズする
 
         """
-        self._connection_pool.close_all_connections()
-
-
-class PostgreSQLAccess(DatabaseAccess):
-    """
-    PostgreSQLのアクセスを行うクラス
-    """
-
-    def __init__(self, minconn: int, maxconn: int, dict_cursor=False, **kwargs: dict):
-        """コンストラクタ
-
-        Args:
-            minconn: 最小コネクション数
-            maxconn: 最大コネクション数
-            **kwargs: データベース情報の辞書
-        """
-        self._connection_pool = connection_pool.PostgreSQLConnectionPool(minconn, maxconn, **kwargs)
-        self._dict_cursor = dict_cursor
-
-    def drop_table(self, table_names):
-
-        if type(table_names) is str:
-            table_names = [table_names]
-
-        for table_name in table_names:
-            self.execute('DROP TABLE IF EXISTS {table_name}', raw_params={'table_name': table_name})
-
-    def table_exists(self, table_name):
-
-        row = self.select_one('SELECT * FROM information_schema.tables WHERE table_name = %(table_name)s',
-                              params={'table_name': table_name})
-
-        if row:
-            return True
-        else:
-            return False
-
-
-class DatabaseAccessFactory(object):
-
-    @classmethod
-    def create(cls, **kwargs):
-        rdbms = kwargs.get('rdbms').lower()
-        kwargs.pop('rdbms')
-        if rdbms == 'postgresql':
-            return PostgreSQLAccess(**kwargs)
-        elif rdbms is None:
-            raise KeyError('rdbms is not set')
-        else:
-            raise ValueError('{} of Access class not exists'.format(rdbms))
+        self._db.close()

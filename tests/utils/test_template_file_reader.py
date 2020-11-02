@@ -3,7 +3,8 @@ import os
 from base_project import config
 from base_project.utils import template_file_reader
 
-TEMPLATES_ROOT_PATH = os.path.join(config.PROJECT_ROOT_PATH, 'tests', 'test_files', 'templates')
+CONFIG = config.Config.get_instance()
+TEMPLATES_ROOT_PATH = os.path.join(CONFIG.PROJECT_ROOT_PATH, 'tests', 'test_files', 'templates')
 
 
 class TestTemplateFileReader(object):

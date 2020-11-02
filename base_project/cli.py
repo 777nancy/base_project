@@ -43,6 +43,10 @@ class CLI(object):
 
         processor_args = processor_cls.cli(sys.argv[3:])
         if processor_args:
+            logger.info('command line args')
+            for k, v in processor_args.__dict__.items():
+                logger.info(f'{k}: {v}')
+
             processor = processor_cls(**processor_args.__dict__)
         else:
             processor = processor_cls()
