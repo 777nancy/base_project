@@ -1,12 +1,9 @@
-from psycopg2.extras import DictCursor
-
-
 class CursorFromConnectionFromPool(object):
     """
     コネクションプールからカーソルを取得するクラス
     """
 
-    def __init__(self, database_connection_pool, dict_cursor=False):
+    def __init__(self, database_connection_pool, dict_cursor=None):
         """コンストラクタ
 
         Args:
@@ -26,7 +23,7 @@ class CursorFromConnectionFromPool(object):
         """
         self.connection = self._database_connection_pool.get_connection()
         if self._dict_cursor:
-            self.cursor = self.connection.cursor(cursor_factory=DictCursor)
+            self.cursor = self.connection.cursor(**self._dict_cursor)
         else:
             self.cursor = self.connection.cursor()
         return self.cursor

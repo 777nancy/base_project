@@ -1,5 +1,6 @@
 # Standard Library
 import copy
+import logging
 import os
 
 from dotenv import load_dotenv
@@ -7,6 +8,9 @@ from dotenv import load_dotenv
 
 class ConfigError(TypeError):
     pass
+
+
+logger = logging.getLogger(__name__)
 
 
 class Config(object):
@@ -77,10 +81,10 @@ class Config(object):
         # データベースの設定
         ###########################################################################
 
-        template_db_url = '{rdbms}+pymysql://{user}:{password}@{host}:{port}/{dbname}'
-        
+        template_db_url = '{rdbms}://{user}:{password}@{host}:{port}/{dbname}'
+
         self.SAMPLE_DB_URL = template_db_url.format(
-            rdbms='mysql',
+            rdbms='mysql+pymysql',
             user=os.getenv('SAMPLE_DB_USER'),
             password=os.getenv('SAMPLE_DB_PASSWORD'),
             host=os.getenv('SAMPLE_DB_HOST'),
@@ -188,6 +192,8 @@ class Config(object):
                 raise KeyError('config: {} is not exits'.format(k))
 
             self.__dict__[k] = v
+
+            logger.info('config: {} is overwritten'.format(k))
 
     def __setattr__(self, key, value):
         if self._initialized:

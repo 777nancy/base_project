@@ -33,7 +33,3 @@ class StockPrice(base.ModelForDatabase):
 
     def table_exists(self, **kwargs):
         return super().table_exists(self._table_name)
-
-if __name__ == '__main__':
-    s = StockPrice('qqq')
-    s.drop_table()
