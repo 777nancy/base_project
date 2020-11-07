@@ -1,7 +1,5 @@
 import os
 
-import sqlalchemy
-
 from base_project import config
 from base_project.models.base import base
 
@@ -18,10 +16,9 @@ class StockPrice(base.ModelForDatabase):
         self.execute_from_file(sql_file_path, raw_params={'table_name': self._table_name})
 
     def insert_market_data_df(self, market_data_df):
-        engine = sqlalchemy.create_engine(self._config.MARKET_DB_URL)
         market_data_df.index.name = 'date'
         market_data_df.columns = ['high', 'low', 'open', 'close', 'volume', 'adj_close']
-        market_data_df.to_sql(self._table_name, engine, if_exists='append')
+        self.write_table(market_data_df, self._table_name, if_exists='append')
 
     def select_latest_date(self):
         sql_file_path = os.path.join('market', 'select_latest_date.sql')

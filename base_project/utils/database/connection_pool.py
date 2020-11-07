@@ -1,8 +1,11 @@
+import logging
 from abc import ABCMeta, abstractmethod
 
 import sqlalchemy
 from psycopg2 import pool
 from sqlalchemy import pool
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseConnectionPool(metaclass=ABCMeta):
@@ -66,6 +69,10 @@ class SqlAlchemyConnectionPool(DatabaseConnectionPool):
     sqlalchemyを利用したコネクションプール管理クラス
     """
 
+    @property
+    def engine(self):
+        return self._engine
+
     def __init__(self, url, max_overflow, pool_size):
         self._engine = sqlalchemy.create_engine(url, pool_size=int(pool_size), max_overflow=int(max_overflow),
                                                 poolclass=pool.QueuePool)
@@ -78,3 +85,45 @@ class SqlAlchemyConnectionPool(DatabaseConnectionPool):
 
     def close_all_connections(self):
         self._engine.dispose()
+
+
+class ConnectionPoolManager(object):
+    connection_pool_dict = {}
+
+    @classmethod
+    def get_or_create_connection_pool(cls, url, max_overflow, pool_size):
+        connection_pool = cls.connection_pool_dict.get(url)
+
+        if connection_pool:
+            logger.debug('got connection pool: {}'.format(url))
+            return connection_pool
+        else:
+            connection_pool = SqlAlchemyConnectionPool(url=url,
+                                                       max_overflow=max_overflow,
+                                                       pool_size=pool_size)
+
+            cls.connection_pool_dict[url] = connection_pool
+
+            logger.debug('created connection pool: {}'.format(url))
+
+            return connection_pool
+
+    @classmethod
+    def close_connection_pools(cls):
+        if cls.connection_pool_dict:
+            for k, v in cls.connection_pool_dict.items():
+                v.close_all_connections()
+                logger.debug('closed connection pool: {}'.format(k))
+
+    @classmethod
+    def close_connection_pool(cls, connection_pool):
+
+        connection_pool.close_all_connections()
+
+        for k, v in cls.connection_pool_dict.items():
+
+            if v is connection_pool:
+                cls.connection_pool_dict.pop(k)
+
+                logger.debug('closed connection pool: {}'.format(k))
+                break

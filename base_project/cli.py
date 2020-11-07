@@ -5,6 +5,7 @@ from importlib import import_module
 
 from base_project import log
 from base_project.utils import time_util
+from base_project.utils.database import connection_pool
 
 
 class CLI(object):
@@ -60,6 +61,8 @@ class CLI(object):
             logger.exception(e)
             processor.do_after_exception(e)
             raise
+        finally:
+            connection_pool.ConnectionPoolManager.close_connection_pools()
 
 
 if __name__ == '__main__':

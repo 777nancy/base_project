@@ -49,4 +49,4 @@ def fetch_stock_data_from_yf(ticker_symbol, start_date, end_date=None, drop_na=T
     """
 
     df = fetch_stock_data(ticker_symbol, 'yahoo', start_date, end_date, drop_na)
-    return df[df.index > start_date]
+    return df[df.index >= start_date]

@@ -3,7 +3,7 @@ from abc import ABCMeta
 from typing import Union
 
 from base_project import config
-from base_project.utils.database import database_access
+from base_project.utils.database import database_accessor
 
 SQl_ROOT_PATH = config.Config.get_instance().SQL_ROOT_PATH
 
@@ -22,7 +22,7 @@ def join_sql_file_path(*sql_file_dirs):
 class ModelForDatabase(metaclass=ABCMeta):
 
     def __init__(self, **kwargs):
-        self._db = database_access.DatabaseAccessFactory.create(**kwargs)
+        self._db = database_accessor.DatabaseAccessorFactory.create(**kwargs)
 
     def execute(self, query: str, params: Union[dict, list, tuple] = None, raw_params: dict = None):
         """クエリを実行する
@@ -166,6 +166,54 @@ class ModelForDatabase(metaclass=ABCMeta):
             クエリの実行結果
         """
         return self._db.select_one_from_file(file_path, params, raw_params, encoding)
+
+    def read_table_by_name(self, table_name,
+                           schema=None,
+                           index_col=None,
+                           coerce_float=True,
+                           parse_dates=None,
+                           columns=None,
+                           chunksize=None):
+        return self._db.read_table_by_name(table_name=table_name,
+                                           schema=schema,
+                                           index_col=index_col,
+                                           coerce_float=coerce_float,
+                                           parse_dates=parse_dates,
+                                           columns=columns,
+                                           chunksize=chunksize)
+
+    def read_table_by_query(self, query,
+                            index_col=None,
+                            coerce_float=True,
+                            params=None,
+                            parse_dates=None,
+                            chunksize=None):
+        return self._db.read_table_by_query(sql=query,
+                                            index_col=index_col,
+                                            coerce_float=coerce_float,
+                                            params=params,
+                                            parse_dates=parse_dates,
+                                            chunksize=chunksize)
+
+    def write_table(self, dataframe,
+                    table_name: str,
+                    schema=None,
+                    if_exists: str = "fail",
+                    index: bool = True,
+                    index_label=None,
+                    chunksize=None,
+                    dtype=None,
+                    method=None):
+        self._db.write_table(dataframe,
+                             table_name=table_name,
+                             schema=schema,
+                             if_exists=if_exists,
+                             index=index,
+                             index_label=index_label,
+                             chunksize=chunksize,
+                             dtype=dtype,
+                             method=method
+                             )
 
     def drop_table(self, table_name):
         self._db.drop_table(table_name)

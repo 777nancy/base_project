@@ -146,9 +146,10 @@ class Config(object):
 
         self._LOGGING_CONFIG = {
             'version': 1,
+            'disable_existing_loggers': False,
             'formatters': {
                 'simple': {
-                    'format': '%(asctime)s : %(threadName)s : %(levelname)s : %(message)s'
+                    'format': '%(asctime)s : %(threadName)s : %(module)s : %(funcName)s : %(levelname)s : %(message)s'
                 }
             },
             'handlers': {

@@ -23,7 +23,7 @@ class WebSearch(base.BasicLogic):
     def __init__(self):
         super().__init__()
 
-        self._slack_notificator = slack.SlackNotificator(__name__)
+        self._slack_notificator = slack.SlackNotificator(util.name2base_name(__name__))
         self._config = config.Config.get_instance()
         self._start_time = None
 
