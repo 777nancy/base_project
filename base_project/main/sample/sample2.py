@@ -1,13 +1,15 @@
-import argparse
+import logging
 
 from base_project.main.base import base
+
+logger = logging.getLogger(__name__)
 
 
 class Sample(base.BasicLogic):
 
     def __init__(self):
         super().__init__()
-        print('no arguments')
+        logger.warning('no arguments')
 
     def run(self, *args, **kwargs):
-        print('main process')
+        logger.warning('main process')

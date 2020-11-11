@@ -1,4 +1,4 @@
-CREATE TABLE "{table_name}"(
+CREATE TABLE "{{ table_name }}"(
     date date NOT NULL PRIMARY KEY,
     high FLOAT,
     low FLOAT,

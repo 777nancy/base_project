@@ -1,7 +1,7 @@
 import argparse
 import logging
 import os
-import threading
+from concurrent import futures
 
 from base_project import slack
 from base_project.main.base import base
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class StockPriceUpdater(base.BasicLogic):
 
-    def __init__(self, ticker_symbol, start_date, end_date):
+    def __init__(self, ticker_symbol, start_date=None, end_date=None):
 
         self._ticker_symbols = ticker_symbol
         self._start_date = start_date
@@ -24,15 +24,13 @@ class StockPriceUpdater(base.BasicLogic):
 
     def run(self):
 
-        threads = []
+        future_list = []
 
-        for symbol in set(self._ticker_symbols):
-            thread = threading.Thread(target=self._update, args=(symbol, ))
-            thread.start()
-            threads.append(thread)
-
-        for thread in threads:
-            thread.join()
+        with futures.ThreadPoolExecutor() as executor:
+            for symbol in set(self._ticker_symbols):
+                future = executor.submit(fn=self._update, symbol=symbol)
+                future_list.append(future)
+        futures.as_completed(future_list)
 
     def do_after_exception(self, exception):
         self._slack_notificator.notify_from_file(os.path.join('slack', 'utils', 'error.txt'),

@@ -1,8 +1,8 @@
-# Standard Library
 import logging
 import threading
 from abc import ABCMeta, abstractmethod
 from typing import Union
+from jinja2 import Environment, BaseLoader
 
 import pandas as pd
 
@@ -26,6 +26,8 @@ class DatabaseAccessor(metaclass=ABCMeta):
 
         """
         self._connection_pool = sqlalchemy_connection_pool
+
+        self._env = Environment(loader=BaseLoader())
 
     @staticmethod
     def read_query_from_file(file_path: str, encoding: str = None) -> str:
@@ -85,7 +87,8 @@ class DatabaseAccessor(metaclass=ABCMeta):
         """
         with cursor.CursorFromConnectionFromPool(self._connection_pool, self._dict_cursor) as cur:
             if raw_params:
-                query = query.format(**raw_params)
+                template_query = self._env.from_string(query)
+                query = template_query.render(raw_params)
 
             cur.executemany(query, params)
             logger.info('SQL: {}'.format(cur.query.decode()))
@@ -314,7 +317,7 @@ class DatabaseAccessor(metaclass=ABCMeta):
         connection_pool.ConnectionPoolManager.close_connection_pool(self._connection_pool)
 
 
-class PostgreSQLAccess(DatabaseAccessor):
+class PostgreSQLAccessor(DatabaseAccessor):
     """
     PostgreSQLのアクセスを行うクラス
     """
@@ -326,10 +329,10 @@ class PostgreSQLAccess(DatabaseAccessor):
         from psycopg2.extras import DictCursor
         self._dict_cursor = {'cursor_factory': DictCursor}
 
-    @staticmethod
-    def _execute(cur, query, params=None, raw_params=None):
+    def _execute(self, cur, query, params=None, raw_params=None):
         if raw_params:
-            query = query.format(**raw_params)
+            template_query = self._env.from_string(query)
+            query = template_query.render(raw_params)
 
         cur.execute(query, params)
         logger.info('SQL: {}'.format(cur.query.decode()))
@@ -354,7 +357,7 @@ class PostgreSQLAccess(DatabaseAccessor):
             return False
 
 
-class MySQLAccess(DatabaseAccessor):
+class MySQLAccessor(DatabaseAccessor):
 
     def __init__(self, sqlalchemy_connection_pool):
 
@@ -362,10 +365,10 @@ class MySQLAccess(DatabaseAccessor):
         from pymysql.cursors import DictCursor
         self._dict_cursor = {'cursor': DictCursor}
 
-    @staticmethod
-    def _execute(cur, query, params=None, raw_params=None):
+    def _execute(self, cur, query, params=None, raw_params=None):
         if raw_params:
-            query = query.format(**raw_params)
+            template_query = self._env.from_string(query)
+            query = template_query.render(raw_params)
 
         cur.execute(query, params)
         logger.info('SQL: {}'.format(cur._executed))
@@ -390,7 +393,6 @@ class MySQLAccess(DatabaseAccessor):
 
 
 class DatabaseAccessorFactory(object):
-
     _lock = threading.Lock()
 
     @classmethod
@@ -401,10 +403,10 @@ class DatabaseAccessorFactory(object):
         pool = connection_pool.ConnectionPoolManager.get_or_create_connection_pool(**kwargs)
         cls._lock.release()
         if rdbms == 'postgresql':
-            return PostgreSQLAccess(pool)
+            return PostgreSQLAccessor(pool)
         elif rdbms == 'mysql':
-            return MySQLAccess(pool)
+            return MySQLAccessor(pool)
         elif rdbms is None:
-            raise KeyError('rdbms is not set')
+            raise KeyError('rdbms does not set')
         else:
-            raise ValueError('{} of Access class not exists'.format(rdbms))
+            raise ValueError('{} of Accessor class not exists'.format(rdbms))

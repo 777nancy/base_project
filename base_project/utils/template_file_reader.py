@@ -1,19 +1,14 @@
-import os
-import string
+from jinja2 import Environment, FileSystemLoader
 
 
 class TemplateFileReader(object):
 
-    def __init__(self, root_dir: str, encoding: str = 'utf-8'):
-        self._root_dir = root_dir
-        self._encoding = encoding
+    def __init__(self, root_dir: str = None, encoding: str = 'utf-8'):
+        self._env = Environment(loader=FileSystemLoader(root_dir, encoding=encoding))
 
     def read(self, file_path, context=None):
-        with open(os.path.join(self._root_dir, file_path), mode='r', encoding=self._encoding) as fin:
-            content = fin.read()
-
+        content = self._env.get_template(file_path)
         if context:
-            template = string.Template(content)
-            content = template.safe_substitute(context)
-
-        return content
+            return content.render(context)
+        else:
+            return content.render()

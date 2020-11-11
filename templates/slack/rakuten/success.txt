@@ -1,4 +1,4 @@
 処理が正常に終了しました。
 
-開始時間: $start_time
-終了時間: $end_time
+開始時間: {{ start_time }}
+終了時間: {{ end_time }}
