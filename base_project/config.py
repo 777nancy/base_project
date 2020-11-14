@@ -63,7 +63,7 @@ class Config(object):
         ###########################################################################
         # プロジェクトに関するディレクトリのパス
         ###########################################################################
-        self.PROJECT_ROOT_PATH = os.path.dirname(os.path.dirname(__file__))
+        self.PROJECT_ROOT_PATH = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
         self.CONFIG_ROOT_PATH = os.path.join(self.PROJECT_ROOT_PATH, 'config')
         self.LIB_ROOT_PATH = os.path.join(self.PROJECT_ROOT_PATH, 'lib')
         self.TEMPLATES_ROOT_PATH = os.path.join(self.PROJECT_ROOT_PATH, 'templates')
